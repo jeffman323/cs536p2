@@ -61,13 +61,12 @@ DIGIT=        [0-9]
 WHITESPACE=   [\040\t]
 LETTER=	      [a-zA-Z]
 ID=           [a-zA-Z_][a-zA-Z_0-9]*
-STRINGCHAR=   ([^\\])|(\\n)|(\\t)|(\\\\)|(\\\")|(\\')|(\\?)
+STRINGCHAR=   ([^\\\"\n])|(\\n)|(\\t)|(\\\\)|(\\\")|(\\\')|(\\\?)
 STRING=       \"({STRINGCHAR})*\"
-BADSTRING=    \"\\d\"
+BADSTRING=    \"({STRINGCHAR}*\\{STRINGCHAR}*)*\"
 UNTERMSTR=    \"({STRINGCHAR})*
 UNTERMBADSTR= (\"(({STRINGCHAR})*\\[^nt\'\"\\\?]({STRINGCHAR})*)*)|(\"(({STRINGCHAR})*\\[^nt\'\"\\\?]({STRINGCHAR})*)*({STRINGCHAR})*\\)
-COMMENT=      (#[^\n]*)|(//[^\n]*) 
-
+COMMENT=      (#[^\n]*)|(//[^\n]*)
 
 %implements java_cup.runtime.Scanner
 %function next_token
@@ -274,29 +273,23 @@ return new Symbol(sym.EOF);
 	    CharNum.num += yytext().length();
 	    return S;
 	  }
-	  
+
 {BADSTRING}        { ErrMsg.fatal(yyline+1, CharNum.num,
 	  		"string literal with bad escaped character ignored");
 	    	CharNum.num += yytext().length();
-	  	  }
-	  
+}
+
 {UNTERMBADSTR}
 	  { ErrMsg.fatal(yyline+1, CharNum.num,
 	  		"unterminated string literal with bad escaped character ignored");
 	    CharNum.num += yytext().length();
-	  }	  
-	  
+} 
+
 {UNTERMSTR}
 	  { ErrMsg.fatal(yyline+1, CharNum.num, 
 	  		"unterminated string literal ignored");
 	  	CharNum.num += yytext().length();
-	  }
-
-
-	 
-
-	  
-	  
+}
 
 {DIGIT}+  { 
 			if (Integer.valueOf(Integer.MAX_VALUE).compareTo(Integer.valueOf(yytext())) < 0) {
@@ -310,15 +303,14 @@ return new Symbol(sym.EOF);
             return S;
           }
 
-
-\n        { CharNum.num = 1; }
-
 {COMMENT} { CharNum.num += yytext().length();
 	  }
+
+\n        { CharNum.num = 1; }
 
 {WHITESPACE}+  { CharNum.num += yytext().length(); }
 
 .         { ErrMsg.fatal(yyline+1, CharNum.num,
                          "illegal character ignored: " + yytext());
             CharNum.num++;
-          }
+}
