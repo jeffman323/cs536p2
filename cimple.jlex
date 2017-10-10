@@ -61,13 +61,12 @@ DIGIT=        [0-9]
 WHITESPACE=   [\040\t]
 LETTER=	      [a-zA-Z]
 ID=           [a-zA-Z_][a-zA-Z_0-9]*
-STRINGCHAR=   [^\n\"\\]|(\\n)|(\\t)|(\\')|(\\\")|(\\?)|(\\\\)
-STRING=       \"{STRINGCHAR}*\"
-UNTERMSTR=    \"{STRINGCHAR}*\n
-BADSTRING=    \"({STRINGCHAR}*\\[^nt\'\"\\\?]{STRINGCHAR}*)*\"
-UNTERMBADSTR= (\"({STRINGCHAR}*\\[^nt\'\"\\\?]{STRINGCHAR}*)*\n)|(\"({STRINGCHAR}*\\[^nt\'\"\\\?]{STRINGCHAR}*)*{STRINGCHAR}*\\\n)
+STRINGCHAR=   ([^\\])|(\\n)|(\\t)|(\\\\)|(\\\")|(\\')|(\\?)
+STRING=       \"({STRINGCHAR})*\"
+BADSTRING=    \"\\d\"
+UNTERMSTR=    \"({STRINGCHAR})*
+UNTERMBADSTR= (\"(({STRINGCHAR})*\\[^nt\'\"\\\?]({STRINGCHAR})*)*)|(\"(({STRINGCHAR})*\\[^nt\'\"\\\?]({STRINGCHAR})*)*({STRINGCHAR})*\\)
 COMMENT=      (#[^\n]*)|(//[^\n]*) 
-
 
 
 %implements java_cup.runtime.Scanner
@@ -276,28 +275,35 @@ return new Symbol(sym.EOF);
 	    return S;
 	  }
 	  
-{UNTERMSTR}
-	  { ErrMsg.fatal(yyline+1, CharNum.num, 
-	  		"unterminated string literal ignored");
-	    CharNum.num = 1;
-	  }
-
-{BADSTRING}
-          { ErrMsg.fatal(yyline+1, CharNum.num,
+{BADSTRING}        { ErrMsg.fatal(yyline+1, CharNum.num,
 	  		"string literal with bad escaped character ignored");
-	    CharNum.num += yytext().length();
-	  }
-	 
+	    	CharNum.num += yytext().length();
+	  	  }
+	  
 {UNTERMBADSTR}
 	  { ErrMsg.fatal(yyline+1, CharNum.num,
 	  		"unterminated string literal with bad escaped character ignored");
 	    CharNum.num += yytext().length();
+	  }	  
+	  
+{UNTERMSTR}
+	  { ErrMsg.fatal(yyline+1, CharNum.num, 
+	  		"unterminated string literal ignored");
+	  	CharNum.num += yytext().length();
 	  }
+
+
+	 
+
 	  
 	  
 
 {DIGIT}+  { 
-	    	int val = 5;
+			if (Integer.valueOf(Integer.MAX_VALUE).compareTo(Integer.valueOf(yytext())) < 0) {
+				ErrMsg.warn(yyline+1, CharNum.num, "integer literal too large; using max value");
+				int val = Integer.MAX_VALUE;
+			}
+	    	 int val = (new Integer(yytext())).intValue();
             Symbol S = new Symbol(sym.INTLITERAL,
                              new IntLitTokenVal(yyline+1, CharNum.num, val));
             CharNum.num += yytext().length();
