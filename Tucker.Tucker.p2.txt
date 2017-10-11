@@ -1,0 +1,8 @@
+﻿Our program is made with make, and tested with make test. It assumes the existence of the following test input files: 
+1) charLines.in
+2) charNumbers.in
+3) badStrings.in
+4) maxInt.in
+5) eof.txt
+
+All of which have been included in the zip file. For this assignment Tucker Penney and Jeffrey Tucker worked together. The name of this file is Tucker.Tucker, because when else will we ever have the opportunity to submit something with that name? 
