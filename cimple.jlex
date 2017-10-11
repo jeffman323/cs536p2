@@ -64,6 +64,7 @@ ID=           [a-zA-Z_][a-zA-Z_0-9]*
 STRINGCHAR=   ([^\\\"\n])|(\\n)|(\\t)|(\\\\)|(\\\")|(\\\')|(\\\?)
 STRING=       \"({STRINGCHAR})*\"
 BADSTRING=    \"({STRINGCHAR}*\\{STRINGCHAR}*)*\"
+UNTERMSTREOF= \"({STRINGCHAR})*/((eof)/)
 UNTERMSTR=    \"({STRINGCHAR})*
 UNTERMBADSTR= (\"(({STRINGCHAR})*\\[^nt\'\"\\\?]({STRINGCHAR})*)*)|(\"(({STRINGCHAR})*\\[^nt\'\"\\\?]({STRINGCHAR})*)*({STRINGCHAR})*\\)
 COMMENT=      (#[^\n]*)|(//[^\n]*)
@@ -283,7 +284,12 @@ return new Symbol(sym.EOF);
 	  { ErrMsg.fatal(yyline+1, CharNum.num,
 	  		"unterminated string literal with bad escaped character ignored");
 	    CharNum.num += yytext().length();
-} 
+}
+ 
+{UNTERMSTREOF}
+	  { 
+		return new Symbol(sym.EOF);
+}
 
 {UNTERMSTR}
 	  { ErrMsg.fatal(yyline+1, CharNum.num, 
@@ -291,14 +297,18 @@ return new Symbol(sym.EOF);
 	  	CharNum.num += yytext().length();
 }
 
+
 {DIGIT}+  { 
-			if (Integer.valueOf(Integer.MAX_VALUE).compareTo(Integer.valueOf(yytext())) < 0) {
-				ErrMsg.warn(yyline+1, CharNum.num, "integer literal too large; using max value");
-				int val = Integer.MAX_VALUE;
-			}
-	    	 int val = (new Integer(yytext())).intValue();
+		int val = 0;
+		try {
+        	val = (new Integer(yytext())).intValue();
+        } catch (NumberFormatException ex) {
+        	ErrMsg.warn(yyline+1, CharNum.num, "integer literal too large; using max value");
+			val = Integer.MAX_VALUE;
+        }
+			
             Symbol S = new Symbol(sym.INTLITERAL,
-                             new IntLitTokenVal(yyline+1, CharNum.num, val));
+            new IntLitTokenVal(yyline+1, CharNum.num, val));
             CharNum.num += yytext().length();
             return S;
           }
